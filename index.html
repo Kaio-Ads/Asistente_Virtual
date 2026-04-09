@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1D9E75">
+<title>Asistente Mario</title>
+<link rel="manifest" href="manifest.json">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
+.nav { display: flex; gap: 4px; background: #e8e8e3; border-radius: 12px; padding: 4px; margin-bottom: 1rem; }
+.nav-btn { flex: 1; padding: 8px 4px; border: none; background: transparent; border-radius: 8px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.15s; }
+.nav-btn.active { background: white; color: #1a1a1a; font-weight: 500; border: 0.5px solid #ddd; }
+.container { max-width: 480px; margin: 0 auto; padding: 1rem; }
+.screen { display: none; }
+.screen.active { display: block; }
+.greeting { font-size: 20px; font-weight: 500; color: #1a1a1a; }
+.date-text { font-size: 13px; color: #888; margin-top: 2px; margin-bottom: 1rem; }
+.focus-box { background: #e8e8e3; border-radius: 12px; padding: 14px; margin-bottom: 1rem; }
+.focus-label { font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.focus-text { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.section-label { font-size: 11px; font-weight: 500; color: #aaa; letter-spacing: 0.08em; text-transform: uppercase; margin: 1.25rem 0 0.5rem; }
+.project-card { background: white; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+.project-card.activo { border-left: 3px solid #1D9E75; }
+.project-card.pausa { border-left: 3px solid #7F77DD; }
+.project-card.largo { border-left: 3px solid #BA7517; }
+.card-title { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+.card-meta { font-size: 11px; color: #888; margin-top: 3px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 20px; margin-top: 5px; }
+.badge-activo { background: #E1F5EE; color: #0F6E56; }
+.badge-pausa { background: #EEEDFE; color: #3C3489; }
+.badge-largo { background: #FAEEDA; color: #633806; }
+.task-item { background: white; border: 0.5px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.task-check { width: 18px; height: 18px; border: 1.5px solid #ccc; border-radius: 4px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all 0.15s; }
+.task-check.done { background: #1D9E75; border-color: #1D9E75; }
+.task-check.done::after { content: ''; width: 9px; height: 5px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translateY(-1px); display: block; }
+.task-text { font-size: 13px; color: #1a1a1a; line-height: 1.4; }
+.task-text.done { text-decoration: line-through; color: #aaa; }
+.task-tag { font-size: 10px; color: #888; margin-top: 2px; }
+.task-prioridad { font-size: 10px; padding: 1px 6px; border-radius: 10px; display: inline-block; margin-top: 3px; }
+.alta { background: #FCEBEB; color: #A32D2D; }
+.media { background: #FAEEDA; color: #633806; }
+.baja { background: #E1F5EE; color: #0F6E56; }
+.rutina-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid #eee; align-items: flex-start; }
+.rutina-hora { font-size: 12px; font-weight: 500; color: #888; min-width: 44px; margin-top: 2px; }
+.rutina-act { font-size: 13px; color: #1a1a1a; }
+.rutina-nota { font-size: 11px; color: #888; margin-top: 2px; }
+.registro-form { display: flex; flex-direction: column; gap: 10px; }
+.form-label { font-size: 12px; color: #888; margin-bottom: 3px; }
+textarea { width: 100%; padding: 10px; border: 0.5px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: white; resize: none; }
+.save-btn { width: 100%; padding: 12px; background: #1D9E75; border: none; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; cursor: pointer; margin-top: 4px; }
+.save-btn:disabled { background: #ccc; cursor: not-allowed; }
+.ask-btn { width: 100%; margin-top: 0.75rem; padding: 12px; background: white; border: 0.5px solid #ddd; border-radius: 12px; font-size: 13px; color: #1a1a1a; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; }
+.loading { text-align: center; padding: 2rem; color: #888; font-size: 13px; }
+.msg-ok { background: #E1F5EE; color: #0F6E56; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="nav">
+  <button class="nav-btn active" onclick="showScreen('inicio', this)">Inicio</button>
+  <button class="nav-btn" onclick="showScreen('proyectos', this)">Proyectos</button>
+  <button class="nav-btn" onclick="showScreen('tareas', this)">Tareas</button>
+  <button class="nav-btn" onclick="showScreen('rutina', this)">Rutina</button>
+  <button class="nav-btn" onclick="showScreen('registro', this)">Registro</button>
+</div>
+
+<div id="inicio" class="screen active">
+  <div class="greeting">Hola, Mario!</div>
+  <div class="date-text" id="fecha-hoy"></div>
+  <div class="focus-box">
+    <div class="focus-label">Próximo bloque</div>
+    <div class="focus-text" id="proximo-bloque">Cargando rutina...</div>
+  </div>
+  <div class="section-label">Tareas de hoy</div>
+  <div id="tareas-hoy"><div class="loading">Cargando tareas...</div></div>
+  <a class="ask-btn" href="https://claude.ai" target="_blank">Abrir Claude para planificar mi día ↗</a>
+</div>
+
+<div id="proyectos" class="screen">
+  <div class="section-label">Todos los proyectos</div>
+  <div id="lista-proyectos"><div class="loading">Cargando...</div></div>
+</div>
+
+<div id="tareas" class="screen">
+  <div class="section-label">Todas las tareas</div>
+  <div id="lista-tareas"><div class="loading">Cargando...</div></div>
+</div>
+
+<div id="rutina" class="screen">
+  <div class="section-label">Mi rutina diaria</div>
+  <div id="lista-rutina"><div class="loading">Cargando...</div></div>
+</div>
+
+<div id="registro" class="screen">
+  <div class="section-label">Registro de hoy</div>
+  <div class="registro-form">
+    <div><div class="form-label">Qué hice hoy</div>
+    <textarea id="reg-hice" rows="3" placeholder="Ej: Grabé video TikTok, publiqué en Instagram..."></textarea></div>
+    <div><div class="form-label">Cómo me sentí / concentración</div>
+    <textarea id="reg-senti" rows="2" placeholder="Ej: Bien enfocado, me costó arrancar pero luego fluí..."></textarea></div>
+    <div><div class="form-label">Pendientes para mañana</div>
+    <textarea id="reg-notas" rows="2" placeholder="Ej: Falta editar el video, responder mensajes..."></textarea></div>
+    <button class="save-btn" id="btn-guardar" onclick="guardarRegistro()">Guardar registro del día</button>
+    <div class="msg-ok" id="msg-ok">Registro guardado en tu Google Sheet!</div>
+  </div>
+</div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwfmJjoGDdOGegkvfjM4XFQbwK_w7Jm0pUqIw7b3h_Ni_6qdPCrKkTovfksyzynOUBQ3/exec';
+const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const hoy = new Date();
+document.getElementById('fecha-hoy').textContent = `${dias[hoy.getDay()]}, ${hoy.getDate()} de ${meses[hoy.getMonth()]}`;
+
+let tareasData = [];
+let rutinasData = [];
+
+function showScreen(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+async function fetchData(action) {
+  const res = await fetch(API + '?action=' + action);
+  return await res.json();
+}
+
+async function cargarProyectos() {
+  try {
+    const data = await fetchData('getProyectos');
+    const cont = document.getElementById('lista-proyectos');
+    cont.innerHTML = '';
+    data.forEach(p => {
+      const estado = p.estado.toLowerCase().includes('activo') ? 'activo' : p.estado.toLowerCase().includes('pausa') ? 'pausa' : 'largo';
+      const badgeClass = estado === 'activo' ? 'badge-activo' : estado === 'pausa' ? 'badge-pausa' : 'badge-largo';
+      cont.innerHTML += `<div class="project-card ${estado}"><div class="card-title">${p.nombre}</div><div class="card-meta">${p.notas}</div><span class="badge ${badgeClass}">${p.estado}</span></div>`;
+    });
+  } catch(e) { document.getElementById('lista-proyectos').innerHTML = '<div class="loading">Error al cargar</div>'; }
+}
+
+async function cargarTareas() {
+  try {
+    tareasData = await fetchData('getTareas');
+    renderTareas();
+    renderTareasHoy();
+  } catch(e) {}
+}
+
+function renderTareas() {
+  const cont = document.getElementById('lista-tareas');
+  cont.innerHTML = '';
+  tareasData.forEach(t => {
+    const done = t.estado === 'Completado';
+    const pClass = t.prioridad === 'Alta' ? 'alta' : t.prioridad === 'Media' ? 'media' : 'baja';
+    cont.innerHTML += `<div class="task-item"><div class="task-check ${done?'done':''}" onclick="toggleTarea('${t.id}',this)"></div><div><div class="task-text ${done?'done':''}">${t.tarea}</div><div class="task-tag">${t.proyecto}</div><span class="task-prioridad ${pClass}">${t.prioridad}</span></div></div>`;
+  });
+}
+
+function renderTareasHoy() {
+  const cont = document.getElementById('tareas-hoy');
+  const pendientes = tareasData.filter(t => t.estado !== 'Completado').slice(0,3);
+  cont.innerHTML = '';
+  pendientes.forEach(t => {
+    const pClass = t.prioridad === 'Alta' ? 'alta' : t.prioridad === 'Media' ? 'media' : 'baja';
+    cont.innerHTML += `<div class="task-item"><div class="task-check" onclick="toggleTarea('${t.id}',this)"></div><div><div class="task-text">${t.tarea}</div><div class="task-tag">${t.proyecto}</div><span class="task-prioridad ${pClass}">${t.prioridad}</span></div></div>`;
+  });
+}
+
+async function toggleTarea(id, el) {
+  el.classList.toggle('done');
+  const texto = el.nextElementSibling.querySelector('.task-text');
+  texto.classList.toggle('done');
+  const nuevoEstado = el.classList.contains('done') ? 'Completado' : 'Pendiente';
+  await fetch(`${API}?action=updateTarea&id=${id}&estado=${nuevoEstado}`);
+  const t = tareasData.find(x => String(x.id) === String(id));
+  if(t) t.estado = nuevoEstado;
+}
+
+async function cargarRutina() {
+  try {
+    rutinasData = await fetchData('getRutina');
+    const cont = document.getElementById('lista-rutina');
+    cont.innerHTML = '';
+    rutinasData.forEach(r => {
+      cont.innerHTML += `<div class="rutina-item"><div class="rutina-hora">${r.hora}</div><div><div class="rutina-act">${r.actividad}</div>${r.notas?`<div class="rutina-nota">${r.notas}</div>`:''}</div></div>`;
+    });
+    actualizarProximoBloque();
+  } catch(e) {}
+}
+
+function actualizarProximoBloque() {
+  if(!rutinasData.length) return;
+  const ahora = new Date();
+  const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+  let proximo = null;
+  for(const r of rutinasData) {
+    const partes = String(r.hora).split(':');
+    if(partes.length < 2) continue;
+    const minutos = parseInt(partes[0]) * 60 + parseInt(partes[1]);
+    if(minutos >= horaActual) { proximo = r; break; }
+  }
+  document.getElementById('proximo-bloque').textContent = proximo ? `${proximo.hora} — ${proximo.actividad}` : 'Día completado!';
+}
+
+async function guardarRegistro() {
+  const hice = document.getElementById('reg-hice').value;
+  const senti = document.getElementById('reg-senti').value;
+  const notas = document.getElementById('reg-notas').value;
+  if(!hice) return;
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const fecha = `${hoy.getDate()}/${hoy.getMonth()+1}/${hoy.getFullYear()}`;
+  await fetch(`${API}?action=addRegistro&fecha=${encodeURIComponent(fecha)}&hice=${encodeURIComponent(hice)}&senti=${encodeURIComponent(senti)}&notas=${encodeURIComponent(notas)}`);
+  btn.textContent = 'Guardar registro del día';
+  btn.disabled = false;
+  document.getElementById('msg-ok').style.display = 'block';
+  document.getElementById('reg-hice').value = '';
+  document.getElementById('reg-senti').value = '';
+  document.getElementById('reg-notas').value = '';
+}
+
+cargarProyectos();
+cargarTareas();
+cargarRutina();
+</script>
+</body>
+</html>
