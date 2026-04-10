@@ -1,0 +1,20 @@
+{
+  "name": "Asistente Mario",
+  "short_name": "Asistente",
+  "start_url": "/Asistente_Virtual/",
+  "display": "standalone",
+  "background_color": "#f5f5f0",
+  "theme_color": "#1D9E75",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/1D9E75/ffffff?text=AM",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/1D9E75/ffffff?text=AM",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
