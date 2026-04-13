@@ -6,6 +6,25 @@
 <meta name="theme-color" content="#1D9E75">
 <title>Asistente Mario</title>
 <link rel="manifest" href="manifest.json">
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/Asistente_Virtual/sw.js')
+    .then(reg => console.log('SW registrado'))
+    .catch(err => console.log('SW error:', err));
+}
+
+async function pedirPermisoNotificaciones() {
+  const permiso = await Notification.requestPermission();
+  if (permiso === 'granted') {
+    const reg = await navigator.serviceWorker.ready;
+    const rutina = await (await fetch(API + '?action=getRutina')).json();
+    reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATIONS', rutina });
+    alert('Notificaciones activadas! Te avisaré en cada bloque de tu rutina.');
+  } else {
+    alert('Necesitas permitir las notificaciones para que funcione.');
+  }
+}
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
@@ -75,7 +94,8 @@ textarea { width: 100%; padding: 10px; border: 0.5px solid #ddd; border-radius: 
   </div>
   <div class="section-label">Tareas de hoy</div>
   <div id="tareas-hoy"><div class="loading">Cargando tareas...</div></div>
-  <a class="ask-btn" href="https://claude.ai" target="_blank">Abrir Claude para planificar mi día ↗</a>
+  <button class="ask-btn" onclick="pedirPermisoNotificaciones()">Activar notificaciones de rutina</button>
+<a class="ask-btn" href="https://claude.ai" target="_blank">Abrir Claude para planificar mi día ↗</a>
 </div>
 
 <div id="proyectos" class="screen">
